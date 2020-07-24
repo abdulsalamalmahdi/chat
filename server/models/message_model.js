@@ -1,5 +1,5 @@
 const mongoose= require('mongoose')
-const commentSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema({
     text: String,
     date: Date,
     seen: {
@@ -15,3 +15,6 @@ const commentSchema = new mongoose.Schema({
         ref: "User",
       },
   });
+
+
+  module.exports= mongoose("Message", messageSchema);

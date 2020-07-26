@@ -3,19 +3,22 @@
     
 
     <v-main>
-      <HelloWorld/>
+      <Navbar/>
+      <LandingPage/>
     </v-main>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
 
+import LandingPage from './components/LandingPage'
+import Navbar from './components/Navbar'
 export default {
   name: 'App',
 
   components: {
-    HelloWorld,
+  Navbar,
+    LandingPage,
   },
 
   data: () => ({

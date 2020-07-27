@@ -10,7 +10,9 @@ const users_model = require("./models/users_model");
 const { runInNewContext } = require("vm");
 const { read } = require("fs");
 const { RSA_NO_PADDING } = require("constants");
+const passport= require('passport')
 
+require('dotenv').config();
 
 mongoose.Promise = global.Promise;
 
@@ -42,12 +44,17 @@ app.use(
   })
 );
 
+// Pass the global passport object into the configuration function
+require('./lib/passport')(passport);
+
+// This will initialize the passport object on every request
+app.use(passport.initialize());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // defining expermintal routes
 
-app.get("/users", (req, res) => {
+app.get("/users",passport.authenticate('jwt', { session: false }), (req, res) => {
   User.find().then((user) => res.send(user))
   .catch(err=>{
       res.status(500).send({
@@ -55,7 +62,7 @@ app.get("/users", (req, res) => {
       })
   })
 });
-app.post("/users", async (req, res) => {
+app.post("/register", async (req, res) => {
   const { first_name, last_name, email, password } = req.body;
 
   try {

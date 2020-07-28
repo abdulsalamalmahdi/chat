@@ -9,7 +9,7 @@
             prepend-icon="mdi-account-circle"
           />
           <v-text-field
-            v-model="name"
+            v-model="last_name"
             label="lastname"
             prepend-icon="mdi-account-circle"
           />
@@ -55,7 +55,7 @@ export default {
   data() {
     return {
       name:"",
-      lastname:"",
+      last_name:"",
       email: "",
       password: "",
       age:"",
@@ -64,15 +64,15 @@ export default {
   },
   methods:{
     submit(){
-     const name =this.name;
-     const lastname= this.lastname;
+     const first_name =this.name;
+     const last_name= this.last_name;
      const email= this.email;
      const password= this.password;
      const age= this.age;
      const address= this.address;
      const body={
-       name,
-       lastname,
+       first_name,
+       last_name,
        email,
        password,
        age,

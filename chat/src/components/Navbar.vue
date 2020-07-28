@@ -3,9 +3,9 @@
     <v-toolbar dense>
       <ul class="ul">
 
-           <li>
+           <!-- <li>
           <router-link v-if="loggedIn" to="/Logout">Log out</router-link>
-        </li>
+        </li> -->
 
         <li>
           <router-link v-if="!loggedIn" to="/Signup">Sign up</router-link>
@@ -38,7 +38,7 @@
     
     </v-toolbar> 
   
-    <router-view />
+    <router-view :key="$route.path"/>
   </div>
 </template>
 <script>

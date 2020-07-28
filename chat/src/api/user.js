@@ -23,6 +23,13 @@ class userApi extends API {
       await axios.patch(`${this.ENDPOINT}/${_id}`, this.getOptions('patch', imageurl))
       .then(this.handleResponse)
       .catch(err=> console.error(err));
+
+      user= async (_id ) =>{
+  await fetch(`${this.ENDPOINT + ":" + _id}`, this.getOptions("get")).then(user=>{
+    console.log("authed: " + user)
+  }).catch(err => console.log(err))
 }
+}
+
 
 export default new userApi();

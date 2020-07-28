@@ -61,11 +61,14 @@ export default {
         .login(opts)
         .then((results) => {
           
-          const authenticatedUser = results;
+          const authenticatedUser = results.data.user;
+          const user_token= JSON.stringify(results.data.token)
+          localStorage.setItem('user_token', user_token);
          
              console.log(authenticatedUser)
           if (authenticatedUser) {
-          
+            
+
 
             this.$store.dispatch(
               "setAuthenticatedUserAction",

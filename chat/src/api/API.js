@@ -1,10 +1,11 @@
 
 class API {
     constructor() {
-      this.BASE_URL = "http://localhost:3000/users";
+      this.BASE_URL = "http://localhost:3000";
       this.headers = {
         'Content-Type': 'application/json',
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'Authorization':JSON.parse(localStorage.getItem('user_token')),
       };
     }
   

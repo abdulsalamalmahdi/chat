@@ -1,12 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-const User= require('../models/user.model.js')
+
 require('dotenv').config();
 const cookieParser = require('cookie-parser')
 const secret_key= process.env.JWT_SECRET;
 
-exports.createToken= (user, expiresIn = null)=>{
+exports.createToken= async (user, expiresIn = null)=>{
     
+    console.log("creating token for " + user)
+
+   
 
     const options = {};
    // console.log(secret_key)

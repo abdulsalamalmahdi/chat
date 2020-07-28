@@ -1,7 +1,8 @@
 import Vue from "vue";
 import Router from "vue-router";
 import LoginFrom from "./components/auth/LoginFrom";
-import LandingPage from './components/LandingPage'
+import LandingPage from './components/LandingPage';
+import Profile from './components/Profile'
 
 // import Profile from "./components/Profile";
 import Register from './components/auth/registeration_form';
@@ -16,6 +17,11 @@ const router= new Router({
             path:"/home",
             name:"LandingPage",
             component:LandingPage
+        },
+        {
+            path:"/profile" || '/:id',
+            name:"Profile",
+            component:Profile
         },
        
         {

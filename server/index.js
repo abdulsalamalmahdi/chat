@@ -10,7 +10,9 @@ const users_model = require("./models/users_model");
 const { runInNewContext } = require("vm");
 const { read } = require("fs");
 const { RSA_NO_PADDING } = require("constants");
-const passport= require('passport')
+const passport= require('passport');
+ const {createToken}= require('./lib/auth');
+ const { hash, compareHash } = require("./lib/util");
 
 require('dotenv').config();
 
@@ -49,12 +51,12 @@ require('./lib/passport')(passport);
 
 // This will initialize the passport object on every request
 app.use(passport.initialize());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // defining expermintal routes
 
-app.get("/users",passport.authenticate('jwt', { session: false }), (req, res) => {
+app.get("/users",(req, res) => {
   User.find().then((user) => res.send(user))
   .catch(err=>{
       res.status(500).send({
@@ -63,10 +65,19 @@ app.get("/users",passport.authenticate('jwt', { session: false }), (req, res) =>
   })
 });
 app.post("/register", async (req, res) => {
-  const { first_name, last_name, email, password } = req.body;
+
+  await console.log(req.body)
+
+  
+ 
+  const password = await hash(req.body.password);
+  const rawUser = {
+    ...req.body,
+    password,
+  };
 
   try {
-    const rawUser = { ...req.body };
+    
 
     User.findOne(
       {
@@ -84,6 +95,7 @@ app.post("/register", async (req, res) => {
             })
             .then(async (user) => {
               const newUser = await user.toObject();
+              console.log(newUser)
               res.send(newUser);
             });
         }
@@ -93,6 +105,63 @@ app.post("/register", async (req, res) => {
     res.send(err);
   }
 });
+
+app.post('/login', async (req, res)=>{
+ 
+  await  console.log('logging')
+const {email, password} = req.body;
+console.log( email);
+console.log(password);
+
+
+try {
+  const rawUser = await User.findOne({ email })
+    .select("+email")
+    .select("+password")
+    .select("+_id");
+// console.log(rawUser)
+  if (!rawUser) {
+
+     throw new Error("Incorret password or User name");
+   }
+
+  const passwordIsCorrect = await compareHash(password, rawUser.password);
+  //  console.log(passwordIsCorrect)
+  if (!passwordIsCorrect) {
+    throw new Error("Incorret password or User name");
+  } else if (passwordIsCorrect) {
+    const user =  rawUser.toObject();
+    delete user.password;
+    
+    const token = createToken(user, "1h");
+
+    // const tokenPld = token.split(".").splice(0, 2);
+    // const tokenSig = token.split(".").splice(2);
+    console.log(token);
+    // console.log(tokenPld);
+    // console.log(tokenSig);
+    user.token = token;
+    // console.log(token);
+
+    res.status(200).json({success:true,token: (await token).token, expiresIn:(await token).expires, user});
+    //   const opt={ httpOnly: true, secure: cookieIsSecure }
+    // res.cookie("jwt", token);
+    // res.cookie("cookie", "cookie")
+    // res.cookie("jwt", tokenPld, { httpOnly: false, secure: false });
+    // res.cookie("jwtSig", tokenSig, { httpOnly: false, secure: false });
+
+    
+  }
+} catch (err) {
+  if (!err.message) {
+    return res
+      .status(500)
+      .send({ message: "An unexpected error occurred during login" });
+  } else {
+    return res.status(404).json(err.message);
+  }
+}
+})
 
 app.post('/message', async (req, res)=>{
 const rawMessage= {...req.body}
@@ -125,6 +194,22 @@ app.get('/messages', async (req, res)=>{
     // User.findById(_id, (err, (err, data)=>{
     //     res.send(data.message)
     // }))
+})
+
+app.get('/users/:id', passport.authenticate('jwt',{session:false}), async (req, res)=>{
+const _id = req.params.id
+console.log(_id)
+  const rawUser = await User.findById(_id);
+  try{
+    if (!rawUser){
+      throw new Error("something went wrong log in again")
+    }else if(rawUser){
+      const reqUser = await rawUser.toObject();
+      res.send(reqUser)
+    }
+  }catch(err){
+    res.send(err)
+  }
 })
 
 const port = 3000;

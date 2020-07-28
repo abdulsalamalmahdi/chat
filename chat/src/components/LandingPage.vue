@@ -10,13 +10,13 @@
 
 <script>
 
-import HelloWorld from './HelloWorld';
+// import HelloWorld from './HelloWorld';
 
 export default {
   name: 'LandingPage',
 
   components: {
-    HelloWorld,
+   
    
   },
 

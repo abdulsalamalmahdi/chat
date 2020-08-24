@@ -1,22 +1,22 @@
 <template>
   <div>
     <v-toolbar dense>
-      <ul class="ul">
-
-           <!-- <li>
-          <router-link v-if="loggedIn" to="/Logout">Log out</router-link>
-        </li> -->
-
+      <ul class="ul"> 
+       <li>
+          <router-link v-if="loggedIn" to="/Profile">Profile</router-link>
+        </li>
         <li>
           <router-link v-if="!loggedIn" to="/Signup">Sign up</router-link>
         </li>
         <li>
           <router-link v-if="!loggedIn" to="/Login">Log in</router-link>
         </li>
-        <!-- <li>
-          <router-link v-if="!loggedIn" to="/About">About</router-link>
-        </li> -->
-       
+        <li>
+          <router-link v-if="loggedIn" to="/About">About</router-link>
+        </li>
+         <li>
+          <router-link v-if="loggedIn" to="/Logout">Log out</router-link>
+        </li>
       </ul>
 
       <v-spacer></v-spacer>
@@ -32,8 +32,8 @@
         <v-icon>mdi-dots-vertical</v-icon>
       </v-btn>
 
-        <v-btn v-if="loggedIn.role==='admin'" >
-      <Requests  class="requests" />
+        <v-btn  v-if="loggedIn">
+      <Requests msg="msg" class="requests" />
     </v-btn>
     
     </v-toolbar> 
@@ -42,32 +42,24 @@
   </div>
 </template>
 <script>
-import { mapGetters } from "vuex";
+
 import Requests from "./Requests";
 export default {
   name: "Navbar",
   data() {
-    return {
-      navContentOut: [
-        { nav: "Signup" },
-        {
-          nav: "Login",
-          //"Login"
-        },
-        { nav: "About" },
-      ],
-      navContentIn: [
-        {
-          nav: "Logout",
-          //"Login"
-        },
-        { nav: "About" },
-      ],
-    };
+   return {
+
+   }
+  },
+  created: function(){
+    
   },
   computed: {
    
-        ...mapGetters({ loggedIn: "getAuthenticatedUser" }),
+        loggedIn(){
+          console.log(this.$store.getters.loggedIn)
+          return this.$store.getters.loggedIn
+        }
       },
 
   components: {

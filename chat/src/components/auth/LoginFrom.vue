@@ -26,17 +26,13 @@
         <v-btn @click.prevent="submit" color="info">Login</v-btn>
       </v-card-actions>
     </v-card>
-    <v-card v-if="status" >
-       <v-alert class="alert"  color="red" type="error" > {{status}}</v-alert>
+    <v-card v-if="serverError">
+      <v-alert class="alert" color="red" type="error"> {{ erverError }}</v-alert>
     </v-card>
-   
   </v-app>
 </template>
 
 <script>
-
-import userApi from "../../api/user";
-
 
 export default {
   name: "LoginForm",
@@ -45,7 +41,9 @@ export default {
       showPassword: false,
       email: "",
       password: "",
-      status:null,
+      serverError: '',
+      
+      loading:false,
     };
   },
   methods: {
@@ -57,49 +55,25 @@ export default {
         email,
         password,
       };
-      userApi
-        .login(opts)
-        .then((results) => {
-          
-          const authenticatedUser = results.data.user;
-          const user_token= JSON.stringify(results.data.token)
-          localStorage.setItem('user_token', user_token);
-         
-             console.log(authenticatedUser)
-          if (authenticatedUser) {
-            
-
-
-            this.$store.dispatch(
-              "setAuthenticatedUserAction",
-              authenticatedUser
-            );
-            localStorage.setItem(
-              "user-token",
-              JSON.stringify(authenticatedUser.token)
-            );
-
-            this.$router.push("/Profile");
-            console.log(document.cookie);
-
-            this.$forceUpdate();
-          }
-          return results;
-        })
-        .catch((err) => {
-          
-          this.status= err.response.data;
-         
-        });
-
-      //  const authenticatedUser=  JSON.parse(localStorage.getItem("authenticatedUser"))
+     
+      this.$store.dispatch('retrieveToken', opts)
+      .then(res =>{
+        console.log(res.data.success)
+        this.loading= false,
+        this.$router.push('Profile')
+      })
+      .catch(err=>{
+        this.loading=false;
+        this.serverError= err.response.data;
+        this.successMessage=''
+      })
     },
   },
 };
 </script>
 
 <style scoped>
-.alert{
+.alert {
   margin: 3rem;
   width: 25rem;
   align-self: center;

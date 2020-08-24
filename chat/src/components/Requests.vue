@@ -7,7 +7,7 @@
     <div class="dropdown">
       <div @click="onclick" class="dropbtn">
         Requests
-        <span class="circle">12</span>
+        <span class="circle">{{filteredMsgs.length}}</span>
       </div>
       <div  v-bind:class=" {dropdownunvisible:undisplay, dropdownvisible:display}">
       <v-row align="center">
@@ -33,16 +33,20 @@
         <v-subheader>REPORTS</v-subheader>
         <v-list-item-group v-model="item" color="primary">
           <v-list-item
-            v-for="(item, i) in items"
+            @dblclick="go(msg._id)"
+            @click="seen(msg._id)"
+            v-for="(msg, i) in filteredMsgs"
             :key="i"
+           
             :inactive="inactive"
           >
-            <v-list-item-avatar v-if="avatar">
-              <v-img :src="item.avatar"></v-img>
+            <v-list-item-avatar >
+            <v-img :src="msg.receiver.image" alt=""></v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title v-html="item.title"></v-list-item-title>
-              <v-list-item-subtitle v-if="twoLine || threeLine" v-html="item.subtitle"></v-list-item-subtitle>
+              <v-list-item-title v-html="msg.sender.first_name"></v-list-item-title>
+              <v-list-item-subtitle v-if="twoLine || threeLine" v-html="msg.text"></v-list-item-subtitle>
+               <v-list-item-subtitle v-if="twoLine || threeLine" v-html="msg.date"></v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-list-item-group>
@@ -56,9 +60,14 @@
 </template>
 
 <script>
+import userApi from '../api/user'
 export default {
   name: "Requests",
+props:{
+  msgs:{
+    type:Array,
 
+}},
   data: () => ({
      item: 5,
       items: [
@@ -111,13 +120,28 @@ export default {
   //   },
   //   }
   // },
-
+computed:{
+  filteredMsgs(){
+    const fltrdMsgs=this.$store.getters.getMsgs.filter(msg => msg.seen !==true)
+    console.log(fltrdMsgs)
+    return fltrdMsgs;
+  }
+},
   methods: {
     onclick() {
       this.undisplay=!this.undisplay
       this.display= !this.display;
       console.log(this.display,this.undisplay)
     },
+    go(id){
+      console.log('double clicked')
+      this.$router.push(`/texts/${id}`);
+      
+    },
+    seen(id){
+      console.log(id)
+ userApi.seenMessage(id);
+    }
   },
 };
 </script>

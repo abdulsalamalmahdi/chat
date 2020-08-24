@@ -3,11 +3,20 @@ import axios from "axios"
 
 
 
-
+axios.interceptors.request.use(function(res){
+  return res; 
+}, function(err){
+  if(err.status === '401'){
+    console.log(typeof err.status)
+    localStorage.removeItem('user_token');
+    localStorage.removeItem('_id')
+  }
+})
 
 class userApi extends API {
   ENDPOINT = this.BASE_URL;
 
+  
   login = async credentials =>
       await axios.post(`${this.ENDPOINT}/login`,  credentials);
         //  await fetch(`${this.ENDPOINT}/login`, this.getOptions("post", credentials))
@@ -28,6 +37,9 @@ class userApi extends API {
   await fetch(`${this.ENDPOINT + ":" + _id}`, this.getOptions("get")).then(user=>{
     console.log("authed: " + user)
   }).catch(err => console.log(err))
+}
+seenMessage= async(id)=>{
+  await axios.put(`${this.ENDPOINT}/message/${id}`)
 }
 }
 

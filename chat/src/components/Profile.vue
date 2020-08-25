@@ -103,13 +103,13 @@
             >
           </v-card>
           <v-card class="chat_body">
-            <p>
-              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Labore
-              expedita reiciendis cumque! Voluptate laudantium et veniam animi!
-              Porro, praesentium enim minus recusandae nulla accusantium
-              voluptas, laborum corporis earum harum quibusdam.
-            </p></v-card
-          >
+            <ul v-for="msg in messages" :key="msg._id">
+              <ol >
+                <p>{{msg.text}}</p>
+                
+              </ol>
+            </ul>
+          </v-card>
           <v-card>
             <form class="form" action="supmit">
               <input placeholder="say somthing !" class="text_field" />

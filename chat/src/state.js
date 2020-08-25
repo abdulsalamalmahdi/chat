@@ -50,7 +50,7 @@ const actions = {
           commit("retrieveToken", token);
           console.log(state.user._d);
            dispatch("retrieveUser");
-           this.$router.push('/profile')
+          //  this.$router.push('/profile')
           resolve(res);
         })
         .catch((err) => {
@@ -63,7 +63,7 @@ const actions = {
     return new Promise((resolve, reject)=>{
         axios.get('/users')
         .then(res =>{
-          console.log(res.data)
+         // console.log(res.data)
           commit("retrieveUsers", res.data);
           
           resolve(res)
@@ -75,19 +75,17 @@ const actions = {
    
   },
   async retrieveUser({ commit, state }) {
-    const _id = await localStorage.getItem("_id");
-    console.log(_id);
+    const _id = await JSON.parse(localStorage.getItem("_id"));
+    console.log(typeof _id);
     return new Promise((resolve, reject) => {
       console.log(typeof state.token)
-    
-      
-     
-       axios.defaults.headers.common = {Authorization: `Bearer ${JSON.parse(state.token)}`}
+     console.log("Bearer " + state.token)
+       axios.defaults.headers.common = {Authorization: `Bearer ` + state.token}
  
       axios
-        .get(`/users/5f1eaee5fe4c0d4ef7d1a75d`)
+        .get(`/users/${_id}`)
         .then(async (res) => {
-        
+        console.log(res)
        const opts={user: res.data.user, messages: res.data.messages}
           commit("retrieveUser",opts );
           resolve(res);

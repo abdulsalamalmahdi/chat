@@ -32,7 +32,7 @@ const router= new Router({
             component:LandingPage
         },
         {
-            path:"/Profile" || '/:id',
+            path:"/profile" || '/:id',
             name:"Profile",
             component:Profile,
             meta:{

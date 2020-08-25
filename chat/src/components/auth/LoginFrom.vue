@@ -27,13 +27,14 @@
       </v-card-actions>
     </v-card>
     <v-card v-if="serverError">
-      <v-alert class="alert" color="red" type="error"> {{ erverError }}</v-alert>
+      <v-alert class="alert" color="red" type="error">
+        {{ erverError }}</v-alert
+      >
     </v-card>
   </v-app>
 </template>
 
 <script>
-
 export default {
   name: "LoginForm",
   data() {
@@ -41,9 +42,9 @@ export default {
       showPassword: false,
       email: "",
       password: "",
-      serverError: '',
-      
-      loading:false,
+      serverError: "",
+
+      loading: false,
     };
   },
   methods: {
@@ -55,18 +56,22 @@ export default {
         email,
         password,
       };
-     
-      this.$store.dispatch('retrieveToken', opts)
-      .then(res =>{
-        console.log(res.data.success)
-        this.loading= false,
-        this.$router.push('Profile')
-      })
-      .catch(err=>{
-        this.loading=false;
-        this.serverError= err.response.data;
-        this.successMessage=''
-      })
+
+      this.$store
+        .dispatch("retrieveToken", opts)
+        .then((res) => {
+         console.log(res);
+          if (res.status === 200) {
+             
+            this.loading = false, 
+            this.$router.push("/profile");
+          }
+        })
+        .catch((err) => {
+          this.loading = false;
+          this.serverError = err.response.data;
+          this.successMessage = "";
+        });
     },
   },
 };

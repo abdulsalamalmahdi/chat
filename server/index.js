@@ -3,18 +3,28 @@ const app = require("express")();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const http = require("http").Server(app);
-let io = require("socket.io")(http);
+const http = require("http")
+const server= http.createServer(app).listen(3000, (err)=>{
+  if (err){
+    console.log(err)
+  }else{
+    const host = server.address().address;
+    const port = server.address.port;
+    console.log(`server listening on ${host}:${port}`)
+  }
+})
+let io = require("socket.io").listen(server)
 const Message = require("./models/message_model");
 const users_model = require("./models/users_model");
 const { runInNewContext } = require("vm");
 const { read } = require("fs");
 const { RSA_NO_PADDING } = require("constants");
-const passport= require('passport');
- const {createToken}= require('./lib/auth');
- const { hash, compareHash } = require("./lib/util");
+const passport = require("passport");
+const { createToken } = require("./lib/auth");
+const { hash, compareHash } = require("./lib/util");
+const Friends = require("./models/friend_requests");
 
-require('dotenv').config();
+require("dotenv").config();
 
 mongoose.Promise = global.Promise;
 
@@ -47,7 +57,7 @@ app.use(
 );
 
 // Pass the global passport object into the configuration function
-require('./lib/passport')(passport);
+require("./lib/passport")(passport);
 
 // This will initialize the passport object on every request
 app.use(passport.initialize());
@@ -56,20 +66,18 @@ app.use(bodyParser.json());
 
 // defining expermintal routes
 
-app.get("/users",(req, res) => {
-  User.find().then((user) => res.send(user))
-  .catch(err=>{
+app.get("/users", (req, res) => {
+  User.find()
+    .then((user) => res.send(user))
+    .catch((err) => {
       res.status(500).send({
-          message: err.Message
-      })
-  })
+        message: err.Message,
+      });
+    });
 });
 app.post("/register", async (req, res) => {
+  await console.log(req.body);
 
-  await console.log(req.body)
-
-  
- 
   const password = await hash(req.body.password);
   const rawUser = {
     ...req.body,
@@ -77,8 +85,6 @@ app.post("/register", async (req, res) => {
   };
 
   try {
-    
-
     User.findOne(
       {
         email: rawUser.email,
@@ -95,7 +101,7 @@ app.post("/register", async (req, res) => {
             })
             .then(async (user) => {
               const newUser = await user.toObject();
-              console.log(newUser)
+              console.log(newUser);
               res.send(newUser);
             });
         }
@@ -106,119 +112,260 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post('/login', async (req, res)=>{
- 
-  await  console.log('logging')
-const {email, password} = req.body;
-console.log( email);
-console.log(password);
+app.post("/login", async (req, res) => {
+ // await console.log("logging");
+  const { email, password } = req.body;
+ // console.log(req.body);
+  await console.log(email);
+ // console.log(password);
 
-
-try {
-  const rawUser = await User.findOne({ email })
-    .select("+email")
-    .select("+password")
-    .select("+_id");
-// console.log(rawUser)
-  if (!rawUser) {
-
-     throw new Error("Incorret password or User name");
-   }
-
-  const passwordIsCorrect = await compareHash(password, rawUser.password);
-  //  console.log(passwordIsCorrect)
-  if (!passwordIsCorrect) {
-    throw new Error("Incorret password or User name");
-  } else if (passwordIsCorrect) {
-    const user =  rawUser.toObject();
-    delete user.password;
-    
-    const token = createToken(user, "1h");
-
-    // const tokenPld = token.split(".").splice(0, 2);
-    // const tokenSig = token.split(".").splice(2);
-    console.log(token);
-    // console.log(tokenPld);
-    // console.log(tokenSig);
-    user.token = token;
-    // console.log(token);
-
-    res.status(200).json({success:true,token: (await token).token, expiresIn:(await token).expires, user});
-    //   const opt={ httpOnly: true, secure: cookieIsSecure }
-    // res.cookie("jwt", token);
-    // res.cookie("cookie", "cookie")
-    // res.cookie("jwt", tokenPld, { httpOnly: false, secure: false });
-    // res.cookie("jwtSig", tokenSig, { httpOnly: false, secure: false });
-
-    
-  }
-} catch (err) {
-  if (!err.message) {
-    return res
-      .status(500)
-      .send({ message: "An unexpected error occurred during login" });
-  } else {
-    return res.status(404).json(err.message);
-  }
-}
-})
-
-app.post('/message', async (req, res)=>{
-const rawMessage= {...req.body}
-console.log(req.body)
-const {_id, test, date, seen, sender, receiver}= rawMessage;
-const message= await Message.create(rawMessage)
-message= await message.populate('sender','receiver').execPopulate()
-.then(async msg=>{
-    return msg.save()
-})
-.then(async (msg) => {
-    const newMsg = await msg.toObject();
-    res.send(newMsg);
-  });
-// await Message.findByOneAndUpdate({sender:sender._id}, { $push: { messages: rawMessage}}, (err, data)=>{
-//     if (err) res.send(err)
-//     res.send(data)
-// })
-})
-
-app.get('/messages', async (req, res)=>{
-    const {_id,message}= req.body;
-  const msgs =  Message.find()
-  .then(data=> 
-    res.send(data));
-  
-   
-      
-    
-    // User.findById(_id, (err, (err, data)=>{
-    //     res.send(data.message)
-    // }))
-})
-
-app.get('/users/:id', passport.authenticate('jwt',{session:false}), async (req, res)=>{
-const _id = req.params.id
-console.log(_id)
-  const rawUser = await User.findById(_id);
-  try{
-    if (!rawUser){
-      throw new Error("something went wrong log in again")
-    }else if(rawUser){
-      const reqUser = await rawUser.toObject();
-      res.send(reqUser)
+  try {
+    const rawUser = await User.findOne({ email })
+      .select("+email")
+      .select("+password")
+      .select("+_id");
+    // console.log(rawUser)
+    if (!rawUser) {
+      throw new Error("Incorret password or User name");
     }
-  }catch(err){
-    res.send(err)
+
+    const passwordIsCorrect = await compareHash(password, rawUser.password);
+    //  console.log(passwordIsCorrect)
+    if (!passwordIsCorrect) {
+      throw new Error("Incorret password or User name");
+    } else if (passwordIsCorrect) {
+      const user = rawUser.toObject();
+      delete user.password;
+
+      const token = createToken(user, "1h");
+
+      // const tokenPld = token.split(".").splice(0, 2);
+      // const tokenSig = token.split(".").splice(2);
+     // console.log(token);
+      // console.log(tokenPld);
+      // console.log(tokenSig);
+      user.token = token;
+      // console.log(token);
+
+      res.status(200).json({
+        success: true,
+        token: (await token).token,
+        expiresIn: (await token).expires,
+        user,
+      });
+      //   const opt={ httpOnly: true, secure: cookieIsSecure }
+      // res.cookie("jwt", token);
+      // res.cookie("cookie", "cookie")
+      // res.cookie("jwt", tokenPld, { httpOnly: false, secure: false });
+      // res.cookie("jwtSig", tokenSig, { httpOnly: false, secure: false });
+    }
+  } catch (err) {
+    if (!err.message) {
+      return res
+        .status(500)
+        .send({ message: "An unexpected error occurred during login" });
+    } else {
+      return res.status(404).json(err.message);
+    }
   }
-})
+});
+
+app.post("/message", async (req, res) => {
+  const rawMessage = { ...req.body };
+
+  const { text, date, seen, sender, receiver } = rawMessage;
+  console.log(rawMessage);
+  await Message.create(rawMessage)
+
+    // message= await message.populate('sender','receiver', (err, doc)=>{
+    //   if (err){
+    //    return err
+    //   }else{
+    //    const sender_id= doc.sender._id;
+
+    //    User.findById(sender_id)
+    //    .then(data=> res.json({data, doc}))
+    //   }
+    // })
+    .then(async (msg) => {
+      return msg.save();
+    })
+    .then(async (msg) => {
+      const newMsg = await msg.toObject();
+      console.log(newMsg);
+      res.send(newMsg);
+    });
+});
+
+app.put("/message/:id", async (req, res) => {
+  const _id = req.params.id;
+  await console.log(_id);
+  await Message.findByIdAndUpdate(_id, { $set: { seen: true } })
+    .then(async (msg) => {
+      await console.log(msg.seen);
+      res.send(msg);
+    })
+    .catch((err) => {
+      res.send(err);
+    });
+});
+
+app.post("/messages/:id", async (req, res) => {
+  // const { _id, receiverId, message } = req.body.message;
+  console.log(req.params);
+
+  let sent = [];
+  let received = [];
+  const { id } = req.params;
+  const { receiver_id } = req.body;
+  console.log(receiver_id);
+  console.log(id);
+  Message.find({
+    sender: id,
+    receiver: receiver_id,
+  })
+    .populate("sender", "receiver")
+    .then((data) => {
+      sent = data;
+
+      Message.find({
+        sender: receiver_id,
+        receiver: id,
+      })
+        .then((data) => {
+          console.log(data);
+          received = data;
+          res.json({ sent, received });
+        })
+        .catch((err) => {
+          console.log(err);
+          return err;
+        });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+
+  // User.findById(_id, (err, (err, data)=>{
+  //     res.send(data.message)
+  // }))
+});
+
+app.get(
+  "/users/:id",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const _id = req.params.id;
+  //  await console.log(req.headers);
+   // console.log(_id);
+   // console.log(req.headers.authorization);
+
+    const user = await User.findById(_id).populate("messages.message");
+    const messages = await Message.find({ sender: _id })
+      .populate(["sender", "receiver"])
+      .then((data) => data)
+      .catch((err) => res.send(err));
+    res.json({ user, messages });
+
+    // .populate('messages', 'text' )
+    // .exec(function(err, doc){
+    //   if (err){
+    //     res.send(err)
+    //   }else if(doc){
+    //     res.send(doc)
+    //   }else{
+    //     res.send('something went wrong')
+    //   }
+    // })
+    // .then((user) => {
+    //   res.send(user);
+    // })
+    // .catch((err) => {
+    //   res.send(err);
+    // });
+
+    // try{
+    //   if (!rawUser){
+    //     throw new Error("something went wrong log in again")
+    //   }else if(rawUser){
+
+    //     const reqUser = await rawUser.toObject();
+    //     res.json({reqUser, messages})
+    //   }
+    // }catch(err){
+    //   console.log(err)
+    //   res.send(err)
+    // }
+  }
+);
+
+app.get("/request/:id", async (req, res) => {
+  try {
+    //   const requests_try= await Friends.aggregate(
+    //     [
+
+    //       { $project: { "requester.v.messages" : 0} },
+
+    //   ]
+    //   ).catch(err=> res.send(err))
+    //   res.send(requests_try);
+    // }
+const {_id}= req.params;
+    const requests = await Requests.find({recepient: _id})
+
+      .populate("requester recepient", "-friends -messages")
+      .then((res) => res)
+      .catch((err) => res.send(err));
+    res.send(requests);
+  } catch (err) {
+    res.send(err);
+  }
+});
+app.post("/request", async (req, res) => {
+  const { requester, recepient } = req.body;
+  await console.log(requester, recepient);
+  try {
+    const docA = await Requests.findOneAndUpdate(
+      { requester: requester, recepient: recepient },
+      { $set: { status: 1 } },
+      { upsert: true, new: true }
+    );
+   
+     
+    // if (request){
+    // await console.log(request)
+    //     Friends.findByIdAndDelete({_id:request._id})
+    //     .then(async result=>{
+    //       const doc= await result.toObject();
+    //       console.log( doc)
+    //       res.json({deleted: doc})
+    //     })
+    //     .catch(err=> res.send(err))
+    // }else{
+    console.log("creating");
+    Requests.create({ requester: requester, recepient: recepient })
+      .then(async (result) => {
+        await result
+          .save()
+
+          .then(async (result) => {
+            res.json({ new_request: result });
+          });
+      })
+      .catch((err) => res.json({ error: err.message }));
+  } catch (err) {
+    // }
+    res.json({ error: "the error is" + err });
+  }
+});
 
 const port = 3000;
 app.listen(port, () => {
   console.log("app is listening");
 });
-http.listen(port, () => {
-  console.log(`Example app listening at http://localhost:3000`);
-});
+// http.listen(port, () => {
+//   console.log(`Example app listening at http://localhost:3000`);
+// });
 
 io.on("connection", (socket) => {
   console.log("socket is connected");
@@ -237,6 +384,65 @@ io.on("connection", (socket) => {
     // });
   });
 
+  socket.on("fech-requests", async(data) => {
+   
+    
+    const {_id}= data;
+    console.log(_id)
+    const from = await Friends.find({requester: _id})
+   
+      .populate("requester recepient", "-friends -messages")
+      .then((res) => {
+        console.log(res)  
+        return res
+      })
+      .catch((err) => console.log(err));
+   
+      const to = await Friends.find({recepient: _id})
+   
+      .populate("requester recepient", "-friends -messages")
+      .then((res) => {
+       
+        return res
+      })
+      .catch((err) => console.log(err));
+      console.log(from, to)
+  socket.emit('send-requests',{to} );
+
+    // this.messages.push({
+    //     message: data.message,
+    //     type: 1,
+    //     user: data.user,
+    // });
+  });
+socket.on("confirm-request", async (data)=>{
+  const {requester, recepient} = data;
+  const to = await Friends.findOneAndDelete({requester, recepient})
+   
+      .populate("requester recepient", "-friends -messages")
+      .then(async (res) => {
+       const userA = await User.findByIdAndUpdate(
+         {requester},
+         {$push:{friends:recepient}}
+         ).then(res => console.log(res))
+         .catch(err=> console.log(err))
+
+       const userB = await User.findByIdAndUpdate(
+        {recepient},
+        {$push:{friends:requester}}
+        ).then(res => console.log(res))
+        .catch(err=> console.log(err))
+      })
+      .catch((err) => console.log(err));
+
+})
+socket.on('delete-request', async(data)=>{
+  const {_id}= data
+ const request = await Friends.findByIdAndDelete({_id})
+ .then(res => res)
+ .catch(err => console.log(err))
+  console.log('deleted request is : ' + request._id)
+})
   socket.on("joined", (data) => {
     console.log(data);
     User.findOne({ name: data }, (err, user) => {

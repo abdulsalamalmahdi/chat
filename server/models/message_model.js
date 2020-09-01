@@ -1,7 +1,7 @@
 const mongoose= require('mongoose')
 const messageSchema = new mongoose.Schema({
     text: String,
-    date: Date,
+    date:{ type : Date, default: Date.now },
     seen: {
         type: Boolean,
         default: false,

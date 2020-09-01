@@ -19,7 +19,7 @@ exports.createToken= async (user, expiresIn = null)=>{
      console.log(options)
          const signedToken = jwt.sign({user},secret_key,options)
     return {
-        token:"Bearer " + signedToken,
+        token:signedToken,
         expires:expiresIn,
     }
 

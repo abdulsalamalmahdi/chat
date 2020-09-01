@@ -2,7 +2,7 @@
 
 ## Project setup
 
-###client
+##client
 ```
 yarn install or npm install
 ```
@@ -12,7 +12,7 @@ yarn install or npm install
 yarn run serve  or npm run serve
 ```
 
-###server
+##server
 ```
 yarn install or npm install
 ```

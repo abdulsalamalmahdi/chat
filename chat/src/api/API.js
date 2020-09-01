@@ -5,7 +5,7 @@ class API {
       this.headers = {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'Authorization':JSON.parse(localStorage.getItem('user_token')),
+        'Authorization':localStorage.getItem('user_token'),
       };
     }
   

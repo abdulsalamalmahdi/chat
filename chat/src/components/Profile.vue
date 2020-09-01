@@ -1,6 +1,6 @@
 <template>
   <div class="body">
-    <v-container v-if="authed" class="d-flex flex-row main ">
+    <v-container  v-if="authed" class=" container d-flex flex-row main">
       <v-col cols="2" class="container-user-card pa-2">
         <v-img
           :src="this.image"
@@ -11,7 +11,7 @@
           width="100%"
         ></v-img>
 
-        <v-form class="form">
+        <!-- <v-form class="form">
           <v-text-field
             v-if="show"
             v-model="image"
@@ -22,7 +22,7 @@
           <v-btn v-if="show" id="urlBtn" @click.prevent="submit" color="info"
             ><v-icon class="ico">mdi-link</v-icon></v-btn
           >
-        </v-form>
+        </v-form> -->
 
         <h6>Name: {{ user.first_name }}</h6>
         <h6>age: {{ user.age }}</h6>
@@ -30,21 +30,21 @@
         <h6>place: {{ user.place }}</h6>
       </v-col>
 
-      <v-col class="pa-2 container-left" cols="10">
-        <v-col>
-          <v-card class="welcome" max-width="fit-content">
+     
+         <!-- <v-col> -->
+          <v-card class="welcome" >
             welcom: {{ user.first_name + " " + user.last_name }}
-          </v-card>
-          <v-spacer></v-spacer>
-          <v-card>
+          </v-card> 
+           <!-- <v-spacer></v-spacer> -->
+          <!-- <v-card>
             <Requests :msgs="messages" />
-          </v-card>
-        </v-col>
-        <v-spacer> </v-spacer>
+          </v-card>  -->
+        
+        <v-spacer> </v-spacer> 
 
-        <Friends @openPopup="openPopup" :friends="this.users" />
+        <Friends class="friends" @openPopup="openPopup" :friends="this.friends" />
 
-        <v-col>
+        <!-- <v-col>
           <v-card max-width="fit-content">
             <v-btn
               v-if="this.user.role === 'client'"
@@ -57,8 +57,8 @@
               </v-icon>
             </v-btn>
           </v-card>
-        </v-col>
-      </v-col>
+        </v-col> -->
+      <!-- </v-col> -->
     </v-container>
     <v-container v-else>
       <div>
@@ -68,9 +68,6 @@
         </v-btn>
       </div>
     </v-container>
-
-    <Drawer />
-
     <!-- <v-container fluid style="position: relative;height: fit-content;top: 65%; " > -->
 
     <v-row
@@ -79,7 +76,19 @@
       class="grey lighten-5"
       style=" display: flex; position: relative ;height: 30%;top: 65%; flex-diretcion: row-reverse;"
     >
+   
       <v-card
+        v-for="userPop in usersPops"
+        :key="userPop._id"
+        :id="userPop._id"
+        outlined
+        tile
+        style="float: right; height: 100%; width: 320px;margin-right: 1rem ;"
+      >
+       <chatPopups @close_chat_head="close_chat_head" :userPop="userPop" :_id="user._id" :messages="messages"/>
+      </v-card>
+    
+      <!-- <v-card
         v-for="userPop in usersPops"
         :key="userPop._id"
         :id="userPop._id"
@@ -117,12 +126,13 @@
             </form>
           </v-card>
         </v-row>
-      </v-card>
+      </v-card> -->
     </v-row>
 
     <v-col cols="12"> </v-col>
 
     <!-- </v-container> -->
+   
   </div>
 </template>
 
@@ -132,6 +142,7 @@ let c = [];
 import Requests from "./Requests";
 import Drawer from "./drawer";
 import Friends from "./friends";
+import chatPopups from "./chat_popups";
 
 //import Uploadbtn from "./buttons/Uploadbtn"
 
@@ -146,10 +157,12 @@ export default {
       socketMsg: "",
       user: {},
       users: [],
+      friends:[],
       messages: [],
       image: "",
       popup_count: "",
       popups: [],
+      error:"",
     };
   },
 
@@ -157,33 +170,43 @@ export default {
     this.$store
       .dispatch("retrieveUser")
       .then((res) => {
-        console.log(res.data);
+       // console.log(res.data);
         this.user = res.data.user;
         this.messages = res.data.messages;
         this.image = !this.user.image ? "/default-image.png" : this.user.image;
+        this.friends= res.data.user.friends;
       })
       .catch((err) => {
-        console.log(err);
+        console.log(err.message.includes('401'));
+        if(err.message.includes('401')){
+          this.error='unautherized';
+          this.$router.push('/login');
+
+        }
+        
       });
     this.$store
       .dispatch("retrieveUsers")
       .then(async (res) => {
-        await console.log(res.data);
+      //  await console.log(res.data);
         this.users = res.data;
       })
       .catch((err) => {
-        console.log(err);
+        console.log(err.message);
+        this.error=err.message;
+        
       });
   },
   computed: {
     authed() {
+     // console.log(this.$store.getters.loggedIn)
       return this.$store.getters.loggedIn;
     },
     usersPops() {
       const pops = this.popups.map((popup) =>
         this.users.find((user) => user._id === popup)
       ).reverse();
-      console.log(pops);
+     // console.log(pops);
       return pops;
     },
   },
@@ -192,6 +215,7 @@ export default {
     Requests,
     Drawer,
     Friends,
+    chatPopups,
   },
 
   sockets: {
@@ -219,7 +243,7 @@ export default {
       const width = window.innerWidth;
       this.popup_count = Math.round(width / 320);
 
-       console.log(this.popup_count);
+    //   console.log(this.popup_count);
       if (!anew) {
 
         c.push(id);
@@ -229,7 +253,7 @@ export default {
         // console.log(this.popups);
          if (this.popups.length > this.popup_count) {
  const elEndx= c.indexOf(id);
-        console.log('index of id is ' + elEndx)
+      //  console.log('index of id is ' + elEndx)
        
      
           
@@ -243,11 +267,11 @@ export default {
     },
 
     close_chat_head(id) {
-      console.log("closed");
+    //  console.log("closed");
       const toClose = this.popups.find((popup) => popup === id);
       const index = this.popups.indexOf(toClose);
       this.popups.splice(index, 1);
-      console.log(this.popups);
+    //  console.log(this.popups);
        document
             .getElementById(`${this.popups[ index - (c.length-1)]}`)
             .classList.remove("hidden");
@@ -295,12 +319,17 @@ export default {
 </script>
 
 <style scoped>
+.container{
+ 
+  width: inherit;
+}
 .main {
   width: 100%;
 }
 .container-user-card {
   align-self: flex-start;
   width: 40%;
+  right: 40rem;
 }
 .container-left {
   height: 100%;
@@ -320,7 +349,9 @@ export default {
 }
 
 .body {
+  position: relative;
   width: 100%;
+  z-index: 2;
 }
 p {
   padding: 1rem;
@@ -351,6 +382,8 @@ span {
 }
 .welcome {
   font-size: 2rem;
+  width: fit-content;
+  height: fit-content;
 }
 
 /* .popup-box {
@@ -445,6 +478,15 @@ p {
 }
 .hidden {
   display: none;
+}
+.friends{
+  position: relative;
+  left: 23%;
+  bottom: 1rem;
+  width: 100%;
+  z-index: 4000;
+ 
+ 
 }
 
 </style>

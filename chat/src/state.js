@@ -21,7 +21,7 @@ const getters = {
   },
   loggedIn: (state) => !!state.token,
   getMsgs: (state) => {
-   console.log(state.messages)
+  // console.log(state.messages)
     return state.messages;
   },
 };
@@ -31,26 +31,29 @@ const actions = {
   removeUser({commit}){
     commit("removeUser")
   },
-  retrieveToken({ commit, dispatch, state }, opts) {
+  retrieveToken({dispatch, commit, state},opts) {
+     //console.log(opts)
     return new Promise( (resolve, reject) => {
+     
       axios
         .post("/login", opts)
         .then( (res) => {
+          //console.log(res)
           const token = res.data.token;
           const _id = res.data.user._id;
-          console.log(res.data.user._id);
-          localStorage.setItem("user_token", JSON.stringify(token));
-          localStorage.setItem("_id", JSON.stringify(_id));
+         // console.log(res.data.user._id);
+          localStorage.setItem("user_token", token);
+          localStorage.setItem("_id", _id);
          
             setTimeout(()=>{
               localStorage.removeItem('user_token');
               localStorage.removeItem('_id')
             }, 3600000);
          
-          commit("retrieveToken", token);
-          console.log(state.user._d);
-           dispatch("retrieveUser");
-          //  this.$router.push('/profile')
+           commit("retrieveToken", token);
+           console.log(state.user._d);
+            dispatch("retrieveUser");
+            // this.$router.push('/profile')
           resolve(res);
         })
         .catch((err) => {
@@ -68,39 +71,42 @@ const actions = {
           
           resolve(res)
         }).catch(err =>{
-          console.log(err)
+          //console.log(err)
           reject(err)
         })
     })
    
   },
   async retrieveUser({ commit, state }) {
-    const _id = await JSON.parse(localStorage.getItem("_id"));
-    console.log(typeof _id);
+    const _id = await localStorage.getItem("_id");
+  //  console.log(_id);
     return new Promise((resolve, reject) => {
-      console.log(typeof state.token)
-     console.log("Bearer " + state.token)
-       axios.defaults.headers.common = {Authorization: `Bearer ` + state.token}
+     // console.log( state.token)
+     
+    
+    // console.log("Bearer "+ (state.token))
+       axios.defaults.headers.common = {Authorization:  "Bearer " + state.token}
  
       axios
         .get(`/users/${_id}`)
         .then(async (res) => {
-        console.log(res)
+      //  console.log(res)
        const opts={user: res.data.user, messages: res.data.messages}
           commit("retrieveUser",opts );
           resolve(res);
         })
         .catch((err) => {
+        //  console.log(err)
           if(err.response.status === 401 ){
-            localStorage.removeItem('user_token');
-            localStorage.removeItem('_id')
+             localStorage.removeItem('user_token');
+             localStorage.removeItem('_id')
 
           }else if (err.request){
-            console.log(err.request);
+           console.log(err.request);
           }else{
             console.log('Error',err.message)
           }
-          console.log(err.config);
+          console.log(err);
           reject(err);
         });
     });
@@ -129,7 +135,7 @@ const mutations = {
   retrieveUser(state, opts) {
     state.user = opts.user;
     state.messages= opts.messages
-    console.log(state.messages)
+   // console.log(state.messages)
   
   },
   retrieveUsers(state, users) {
@@ -137,7 +143,7 @@ const mutations = {
     
   },
   setImage(state, image) {
-    console.log("setting " + image);
+    //console.log("setting " + image);
     state.authenticatedUser = { image };
   },
   removeUser(state) {

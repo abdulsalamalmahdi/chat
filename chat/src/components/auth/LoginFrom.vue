@@ -56,11 +56,12 @@ export default {
         email,
         password,
       };
+      console.log(opts)
 
       this.$store
-        .dispatch("retrieveToken", opts)
+        .dispatch("retrieveToken", {email,password})
         .then((res) => {
-         console.log(res);
+         console.log("logging");
           if (res.status === 200) {
              
             this.loading = false, 
@@ -68,8 +69,9 @@ export default {
           }
         })
         .catch((err) => {
+          console.log(err)
           this.loading = false;
-          this.serverError = err.response.data;
+          this.serverError = err.response;
           this.successMessage = "";
         });
     },

@@ -6,14 +6,14 @@
 
     <div class="dropdown">
       <div @click="onclick" class="dropbtn">
-        Requests
-        <span class="circle">{{filteredMsgs.length}}</span>
+       Friends Requests
+        <span class="circle">{{requests.length}}</span>
       </div>
       <div  v-bind:class=" {dropdownunvisible:undisplay, dropdownvisible:display}">
       <v-row align="center">
    
     <v-card
-      class="mx-auto"
+      class="mx-auto list"
       max-width="400"
       tile
     >
@@ -30,23 +30,25 @@
         :avatar="avatar"
         :rounded="rounded"
       >
-        <v-subheader>REPORTS</v-subheader>
-        <v-list-item-group v-model="item" color="primary">
+        <v-subheader>requests</v-subheader>
+        <v-list-item-group color="primary">
           <v-list-item
             @dblclick="go(msg._id)"
             @click="seen(msg._id)"
-            v-for="(msg, i) in filteredMsgs"
+            v-for="(req, i) in requests"
             :key="i"
            
             :inactive="inactive"
           >
             <v-list-item-avatar >
-            <v-img :src="msg.receiver.image" alt=""></v-img>
+            <v-img :src="req.requester.image ? req.requester.image: require('../../public/default-image.png')" alt=""></v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title v-html="msg.sender.first_name"></v-list-item-title>
-              <v-list-item-subtitle v-if="twoLine || threeLine" v-html="msg.text"></v-list-item-subtitle>
-               <v-list-item-subtitle v-if="twoLine || threeLine" v-html="msg.date"></v-list-item-subtitle>
+             <v-list-item-subtitle>
+               <v-btn :disabled="confirmed" @click="Confirm(req.requester._id, req.recepient._id)">confirm</v-btn>
+               <v-btn :disabled="deleted" @click="Delete(req._id)">delete</v-btn>
+             </v-list-item-subtitle>
+               <v-list-item-subtitle v-if="twoLine || threeLine" v-html="'At ' + req.updatedAt.replace('T','').split('.')[0]"> </v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-list-item-group>
@@ -60,43 +62,17 @@
 </template>
 
 <script>
+import io from "socket.io-client";
 import userApi from '../api/user'
 export default {
   name: "Requests",
 props:{
-  msgs:{
+  requests:{
     type:Array,
 
 }},
   data: () => ({
-     item: 5,
-      items: [
-        {
-          avatar: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-          title: 'Brunch this weekend?',
-          subtitle: "<span class='text--primary'>Ali Connors</span> &mdash; I'll be in your neighborhood doing errands this weekend. Do you want to hang out?",
-        },
-        {
-          avatar: 'https://cdn.vuetifyjs.com/images/lists/2.jpg',
-          title: 'Summer BBQ <span class="grey--text text--lighten-1">4</span>',
-          subtitle: "<span class='text--primary'>to Alex, Scott, Jennifer</span> &mdash; Wish I could come, but I'm out of town this weekend.",
-        },
-        {
-          avatar: 'https://cdn.vuetifyjs.com/images/lists/3.jpg',
-          title: 'Oui oui',
-          subtitle: "<span class='text--primary'>Sandra Adams</span> &mdash; Do you have Paris recommendations? Have you ever been?",
-        },
-        {
-          avatar: 'https://cdn.vuetifyjs.com/images/lists/4.jpg',
-          title: 'Birthday gift',
-          subtitle: "<span class='text--primary'>Trevor Hansen</span> &mdash; Have any ideas about what we should get Heidi for her birthday?",
-        },
-        {
-          avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-          title: 'Recipe to try',
-          subtitle: "<span class='text--primary'>Britta Holt</span> &mdash; We should eat this: Grate, Squash, Corn, and tomatillo Tacos.",
-        },
-      ],
+   
       disabled: false,
       dense: false,
       twoLine: true,
@@ -109,7 +85,8 @@ props:{
       nav: true,
       avatar: true,
       rounded: true,
-
+      confirmed:false,
+      deleted:false,
       undisplay: true,
       display:false
     }),
@@ -120,10 +97,14 @@ props:{
   //   },
   //   }
   // },
+  created(){
+     this.socket = io("http://localhost:3000");
+     console.log(this)
+  },
 computed:{
   filteredMsgs(){
     const fltrdMsgs=this.$store.getters.getMsgs.filter(msg => msg.seen !==true)
-    console.log(fltrdMsgs)
+   // console.log(fltrdMsgs)
     return fltrdMsgs;
   }
 },
@@ -141,7 +122,20 @@ computed:{
     seen(id){
       console.log(id)
  userApi.seenMessage(id);
-    }
+    },
+    confirm(requester, recepient){
+
+      this.socket.emit("confirm-request", { requester, recepient})
+      this.confirmed= true;
+      
+
+
+    },
+    Delete(_id){
+  this.socket.emit("delete-request", {_id})
+  this.deleted=true;
+
+    },
   },
 };
 </script>
@@ -152,7 +146,7 @@ computed:{
   color: rgb(73, 102, 233);
  
 
-  padding: 16px;
+
   font-size: 16px;
   border: none;
 }
@@ -188,7 +182,7 @@ computed:{
   padding: 12px 16px;
   text-decoration: none;
   display: block;
-  position:absolute
+  position:absolute;
 }
 .circle{
    height: 10rem;
@@ -197,5 +191,11 @@ computed:{
   border-radius: 50% ;
   text-align: center;
   color: white;
+}
+.list{
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+
 }
 </style>

@@ -7,9 +7,11 @@ import about from './components/about';
 import Logout from './components/auth/logout';
 import message from './components/message';
 import store from '../src/state'
-
+import HelloWorld from './components/HelloWorld'
 // import Profile from "./components/Profile";
 import Register from './components/auth/registeration_form';
+import Search from './components/search';
+
 
 // import store from "./State"
 
@@ -18,6 +20,7 @@ Vue.use(Router);
 const router= new Router({
     mode:"history",
     routes: [
+       
         {
             path:"/logout",
             name:"Logout",
@@ -27,13 +30,13 @@ const router= new Router({
             }   
         },
         {
-            path:"/home",
+            path: "/",
             name:"LandingPage",
             component:LandingPage
         },
         {
             path:"/profile" || '/:id',
-            name:"Profile",
+            name:"profile",
             component:Profile,
             meta:{
                 requiresAuth:true
@@ -49,8 +52,8 @@ const router= new Router({
 
         
         {
-            path:'/Signup',
-            name:'Signup',
+            path:'/register',
+            name:'Registeration',
             component:Register
         },
         {
@@ -66,6 +69,16 @@ const router= new Router({
                 requiresAuth:true
             }
         },
+        {
+            path:'/search',
+            name:'Search',
+            component:Search,
+        },
+        {
+            path:'/hello',
+            name:'HelloWorld',
+            component: HelloWorld,
+        }
         
     ]
 })
@@ -74,7 +87,7 @@ router.beforeEach(async function(to, from, next){
     
     if(to.meta.requiresAuth){
         //need login
-        console.log(store.getters.loggedIn)
+      //  console.log(store.getters.loggedIn)
         if(!store.getters.loggedIn){
             next({
                 path: "/login"

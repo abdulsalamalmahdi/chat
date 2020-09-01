@@ -1,24 +1,19 @@
-# hello-world
+# Chat
 
 ## Project setup
+
+###client
 ```
-yarn install
+yarn install or npm install
 ```
 
 ### Compiles and hot-reloads for development
 ```
-yarn serve
+yarn run serve  or npm run serve
 ```
 
-### Compiles and minifies for production
-```
-yarn build
-```
+###server
+yarn install or npm install
 
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Compiles and hot-reloads for development
+yarn nodemon index or npx nodemon index

@@ -28,7 +28,7 @@
     </v-card>
     <v-card v-if="serverError">
       <v-alert class="alert" color="red" type="error">
-        {{ erverError }}</v-alert
+        {{ serverError }}</v-alert
       >
     </v-card>
   </v-app>
@@ -43,7 +43,6 @@ export default {
       email: "",
       password: "",
       serverError: "",
-
       loading: false,
     };
   },
@@ -69,9 +68,9 @@ export default {
           }
         })
         .catch((err) => {
-          console.log(err)
+          console.log(err.response.data)
           this.loading = false;
-          this.serverError = err.response;
+          this.serverError = err.response.data;
           this.successMessage = "";
         });
     },

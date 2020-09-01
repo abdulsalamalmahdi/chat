@@ -45,7 +45,7 @@
             </v-list-item-avatar>
             <v-list-item-content>
              <v-list-item-subtitle>
-               <v-btn :disabled="confirmed" @click="Confirm(req.requester._id, req.recepient._id)">confirm</v-btn>
+               <v-btn :disabled="confirmed" @click="Confirm(req.requester._id, req.recepient._id, req._id)">confirm</v-btn>
                <v-btn :disabled="deleted" @click="Delete(req._id)">delete</v-btn>
              </v-list-item-subtitle>
                <v-list-item-subtitle v-if="twoLine || threeLine" v-html="'At ' + req.updatedAt.replace('T','').split('.')[0]"> </v-list-item-subtitle>
@@ -123,17 +123,18 @@ computed:{
       console.log(id)
  userApi.seenMessage(id);
     },
-    confirm(requester, recepient){
+    confirm(requester, recepient,_id){
 
       this.socket.emit("confirm-request", { requester, recepient})
       this.confirmed= true;
-      
+      this.$emit('remove-request',{_id})
 
 
     },
     Delete(_id){
   this.socket.emit("delete-request", {_id})
   this.deleted=true;
+this.$emit('remove-request',{_id})
 
     },
   },

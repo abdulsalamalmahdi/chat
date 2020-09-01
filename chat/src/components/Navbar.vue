@@ -65,7 +65,7 @@ export default {
     return {
       dialog: false,
       name:'',
-      requests:{},
+      requests:[],
       user:{}
     };
   },

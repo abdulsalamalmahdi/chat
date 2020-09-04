@@ -3,21 +3,21 @@ const app = require("express")();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const http = require("http")
-const server= http.createServer(app).listen(3000, (err)=>{
-  if (err){
-    console.log(err)
-  }else{
+const http = require("http");
+const server = http.createServer(app).listen(3000, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
     const host = server.address().address;
     const port = server.address.port;
-    console.log(`server listening on ${host}:${port}`)
+    console.log(`server listening on ${host}:${port}`);
   }
-})
-let io = require("socket.io").listen(server)
+});
+let io = require("socket.io").listen(server);
 const Message = require("./models/message_model");
 const users_model = require("./models/users_model");
 const { runInNewContext } = require("vm");
-const { read } = require("fs");
+const { read, readdirSync } = require("fs");
 const { RSA_NO_PADDING } = require("constants");
 const passport = require("passport");
 const { createToken } = require("./lib/auth");
@@ -75,6 +75,15 @@ app.get("/users", (req, res) => {
       });
     });
 });
+app.delete("/delete", (req, res) => {
+  Message.remove({})
+    .then((user) => res.send(user))
+    .catch((err) => {
+      res.status(500).send({
+        message: err.Message,
+      });
+    });
+});
 app.post("/register", async (req, res) => {
   await console.log(req.body);
 
@@ -113,11 +122,11 @@ app.post("/register", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
- // await console.log("logging");
+  // await console.log("logging");
   const { email, password } = req.body;
- // console.log(req.body);
+  // console.log(req.body);
   await console.log(email);
- // console.log(password);
+  // console.log(password);
 
   try {
     const rawUser = await User.findOne({ email })
@@ -141,7 +150,7 @@ app.post("/login", async (req, res) => {
 
       // const tokenPld = token.split(".").splice(0, 2);
       // const tokenSig = token.split(".").splice(2);
-     // console.log(token);
+      // console.log(token);
       // console.log(tokenPld);
       // console.log(tokenSig);
       user.token = token;
@@ -255,16 +264,34 @@ app.get(
   "/users/:id",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
+    await console.log('user calling')
     const _id = req.params.id;
-  //  await console.log(req.headers);
-   // console.log(_id);
-   // console.log(req.headers.authorization);
+  
+    //  await console.log(req.headers);
+    // console.log(_id);
+    // console.log(req.headers.authorization);
 
-    const user = await User.findById(_id).populate("messages.message");
+    const user = await User.findById(_id).populate({
+      path: 'friends.friend',
+      model:'User',
+      select:['_id','first_name', 'last_name', 'image']
+    }).then(async res => {
+      const userObj = await res.toObject();
+      await console.log(userObj)
+     const friends= await User.find().where('_id').in(userObj.friends)
+     .then(async result => await result)
+      .catch(err =>console.log(err))
+   
+       userObj.friends =  friends;
+      return userObj
+    })
+    .catch(err=> console.log(err))
+
     const messages = await Message.find({ sender: _id })
       .populate(["sender", "receiver"])
       .then((data) => data)
       .catch((err) => res.send(err));
+       await console.log('user friends ' + user.friends)
     res.json({ user, messages });
 
     // .populate('messages', 'text' )
@@ -310,8 +337,8 @@ app.get("/request/:id", async (req, res) => {
     //   ).catch(err=> res.send(err))
     //   res.send(requests_try);
     // }
-const {_id}= req.params;
-    const requests = await Requests.find({recepient: _id})
+    const { _id } = req.params;
+    const requests = await Requests.find({ recepient: _id })
 
       .populate("requester recepient", "-friends -messages")
       .then((res) => res)
@@ -330,8 +357,7 @@ app.post("/request", async (req, res) => {
       { $set: { status: 1 } },
       { upsert: true, new: true }
     );
-   
-     
+
     // if (request){
     // await console.log(request)
     //     Friends.findByIdAndDelete({_id:request._id})
@@ -384,30 +410,48 @@ io.on("connection", (socket) => {
     // });
   });
 
-  socket.on("fech-requests", async(data) => {
-   
-    
-    const {_id}= data;
-    console.log(_id)
-    const from = await Friends.find({requester: _id})
-   
+  socket.on("friend-request", async (data) => {
+    const { requester, recepient } = data;
+    const request = await Friends.findOneAndUpdate(
+      { requester: requester, recepient: recepient },
+      { $set: { status: 1 } },
+      { upsert: true, new: true }
+    )
+      .then((doc) => doc)
+      .catch((err) => console.log(err));
+      await console.log(request)
+  });
+
+  socket.on('unfriend', async(friend_id, user_id)=>{
+   await  console.log(friend_id, user_id)
+         await User.findByIdAndUpdate(
+          user_id,
+          {$pullAll:{friends:[friend_id]}},
+          {multi: true}
+         ).then(async res=> res)
+          .catch(err=> console.log(err))
+  })
+  socket.on("fech-requests", async (data) => {
+    const { _id } = data;
+    console.log(_id);
+    const from = await Friends.find({ requester: _id })
+
       .populate("requester recepient", "-friends -messages")
       .then((res) => {
-        console.log(res)  
-        return res
+        console.log(res);
+        return res;
       })
       .catch((err) => console.log(err));
-   
-      const to = await Friends.find({recepient: _id})
-   
+
+    const to = await Friends.find({ recepient: _id })
+
       .populate("requester recepient", "-friends -messages")
       .then((res) => {
-       
-        return res
+        return res;
       })
       .catch((err) => console.log(err));
-      console.log(from, to)
-  socket.emit('send-requests',{to} );
+    console.log(from, to);
+    socket.emit("send-requests", { to });
 
     // this.messages.push({
     //     message: data.message,
@@ -415,34 +459,45 @@ io.on("connection", (socket) => {
     //     user: data.user,
     // });
   });
-socket.on("confirm-request", async (data)=>{
-  const {requester, recepient} = data;
-  const to = await Friends.findOneAndDelete({requester, recepient})
-   
+  socket.on("confirm-request", async (data) => {
+    await console.log("confirming request");
+    const { requester, recepient } = data;
+    const to = await Friends.findOneAndDelete({ requester, recepient })
+
       .populate("requester recepient", "-friends -messages")
       .then(async (res) => {
-       const userA = await User.findByIdAndUpdate(
-         {requester},
-         {$push:{friends:recepient}}
-         ).then(res => console.log(res))
-         .catch(err=> console.log(err))
+       
+        const requester_id = res.requester._id;
+        const recepient_id= res.recepient._id
+        const userA = await User.findByIdAndUpdate(
+          requester_id,
+          {
+            $push: { friends: recepient },
+            $set: { status: 3 },
+          }
+        )
+          .then((res) =>res)
+          .catch((err) => console.log(err));
 
-       const userB = await User.findByIdAndUpdate(
-        {recepient},
-        {$push:{friends:requester}}
-        ).then(res => console.log(res))
-        .catch(err=> console.log(err))
+        const userB = await User.findByIdAndUpdate(
+          recepient_id,
+          { $push: { friends: requester },
+            $set: { status: 3 } 
+          }
+        )
+          .then((res) => res)
+          .catch((err) => console.log(err));
       })
       .catch((err) => console.log(err));
-
-})
-socket.on('delete-request', async(data)=>{
-  const {_id}= data
- const request = await Friends.findByIdAndDelete({_id})
- .then(res => res)
- .catch(err => console.log(err))
-  console.log('deleted request is : ' + request._id)
-})
+    await console.log(to);
+  });
+  socket.on("delete-request", async (data) => {
+    const { _id } = data;
+    const request = await Friends.findByIdAndDelete({ _id })
+      .then((res) => res)
+      .catch((err) => console.log(err));
+    console.log("deleted request is : " + request._id);
+  });
   socket.on("joined", (data) => {
     console.log(data);
     User.findOne({ name: data }, (err, user) => {

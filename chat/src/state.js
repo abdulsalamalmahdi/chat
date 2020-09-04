@@ -90,7 +90,7 @@ const actions = {
       axios
         .get(`/users/${_id}`)
         .then(async (res) => {
-      //  console.log(res)
+     await  console.log(res)
        const opts={user: res.data.user, messages: res.data.messages}
           commit("retrieveUser",opts );
           resolve(res);

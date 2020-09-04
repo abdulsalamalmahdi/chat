@@ -12,9 +12,9 @@
     </v-card-title>
  <v-spacer></v-spacer>
    
-        <template >
+        <template  v-if="friends.length > 0">
         <v-list
-       
+         
          v-for="friend in friends"
          :key="friend._id"
         class="ul"
@@ -23,19 +23,19 @@
            <v-list-item class="item" >
           <v-list-item-avatar>
             <v-avatar
-              color="blue"
+             
             >
-              <v-img :src="friend.image"></v-img>
+              <v-img :src="friend.image ? friend.image: require('../../public/default-image.png')"></v-img>
             </v-avatar>
           </v-list-item-avatar>
 
           <v-list-item-content>
-            <v-list-item-title v-on:click="open_popup(friend._id)">{{ friend.email }}</v-list-item-title>
+            <v-list-item-title v-on:click="open_popup(friend._id)">{{ friend.first_name + " " + friend.last_name }}</v-list-item-title>
           </v-list-item-content>
 
         </v-list-item>
        
-         
+         <v-divider></v-divider>
         </v-list>
         
       </template>
@@ -54,7 +54,9 @@
         type: Array,
       },
     },
-    
+    created: async function(){
+       
+    },
     data(){
       return{
        scrollPosition:null,

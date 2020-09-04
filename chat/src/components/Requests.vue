@@ -14,24 +14,23 @@
    
     <v-card
       class="mx-auto list"
-      max-width="400"
+      max-width="600"
       tile
     >
       <v-list
         :disabled="disabled"
         :dense="dense"
-        :two-line="twoLine"
-        :three-line="threeLine"
+        
         :shaped="shaped"
         :flat="flat"
-        :subheader="subheader"
+        subheader
         :sub-group="subGroup"
         :nav="nav"
         :avatar="avatar"
         :rounded="rounded"
       >
-        <v-subheader>requests</v-subheader>
-        <v-list-item-group color="primary">
+      <v-subheader>Friends Requests</v-subheader>
+        <v-list-item class="list_item" color="primary">
           <v-list-item
             @dblclick="go(msg._id)"
             @click="seen(msg._id)"
@@ -40,18 +39,42 @@
            
             :inactive="inactive"
           >
-            <v-list-item-avatar >
+          <v-row>
+          
+               <v-list-item-avatar  >
             <v-img :src="req.requester.image ? req.requester.image: require('../../public/default-image.png')" alt=""></v-img>
             </v-list-item-avatar>
-            <v-list-item-content>
-             <v-list-item-subtitle>
-               <v-btn :disabled="confirmed" @click="Confirm(req.requester._id, req.recepient._id, req._id)">confirm</v-btn>
-               <v-btn :disabled="deleted" @click="Delete(req._id)">delete</v-btn>
-             </v-list-item-subtitle>
-               <v-list-item-subtitle v-if="twoLine || threeLine" v-html="'At ' + req.updatedAt.replace('T','').split('.')[0]"> </v-list-item-subtitle>
-            </v-list-item-content>
+          
+            <v-col class="details">
+              
+                 <v-list-item-title v-text="req.requester.first_name+ ' ' + req.requester.last_name"></v-list-item-title>
+                 <v-list-item class="time" v-if="twoLine || threeLine" v-html="'At ' + req.updatedAt.replace('T','').split('.')[0]"> </v-list-item>
+
+                 
+  
+            </v-col>
+            <div class="controls">
+             
+               <v-btn :disabled="confirmed" @click="confirm(req.requester._id, req.recepient._id)">confirm</v-btn>
+               <v-btn :disabled="deleted" @click="deleteIt(req._id)">delete</v-btn>
+             
+             
+            </div>
+          </v-row>
+           
+          
+              <!-- <v-list-item class="bla" v-html="kdjfksjfdlkj">
+              
+             </v-list-item> -->
+             
+             
+          
           </v-list-item>
-        </v-list-item-group>
+  
+          
+
+        </v-list-item>
+        
       </v-list>
     </v-card>
   </v-row>
@@ -79,7 +102,6 @@ props:{
       threeLine: false,
       shaped: false,
       flat: false,
-      subheader: false,
       inactive: true,
       subGroup: true,
       nav: true,
@@ -99,7 +121,9 @@ props:{
   // },
   created(){
      this.socket = io("http://localhost:3000");
-     console.log(this)
+     this.socket.emit('connection', {data:'connection'})
+    
+   
   },
 computed:{
   filteredMsgs(){
@@ -123,18 +147,18 @@ computed:{
       console.log(id)
  userApi.seenMessage(id);
     },
-    confirm(requester, recepient,_id){
-
+    confirm(requester, recepient){
+console.log(requester, recepient)
       this.socket.emit("confirm-request", { requester, recepient})
       this.confirmed= true;
-      this.$emit('remove-request',{_id})
+    
 
 
     },
-    Delete(_id){
+    deleteIt(_id){
   this.socket.emit("delete-request", {_id})
   this.deleted=true;
-this.$emit('remove-request',{_id})
+//this.$emit('remove-request',{_id})
 
     },
   },
@@ -196,7 +220,42 @@ this.$emit('remove-request',{_id})
 .list{
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  left: -12rem;
+  width: 400px;
+  background: rgb(229, 237, 240);
 
 }
+
+ 
+.details{
+  width: 70%;
+  font-size: 1em;
+ padding: 0;
+ margin: 0;
+ left: 5rem;
+  }
+  .avatar{
+    width: 10px;
+    height: 45px;
+    background: yellow;
+    border: 1px solid black;
+  }
+  img{
+    border: 1px solid black;
+    width: 45px;
+    height: 45px;
+  }
+  .controls{
+    margin: 0;
+    padding: 0;
+    left: 1rem;
+  
+  }
+  button :hover{
+    background: #c7c0c0;
+  }
+  .time{
+    font-size: 10px;
+  }
+  
 </style>

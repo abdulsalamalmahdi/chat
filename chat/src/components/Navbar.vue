@@ -31,9 +31,9 @@
 
       <v-spacer></v-spacer>
         
-        <p  v-if="dialog" class="search">
-          jsdklfjksdjflkj
-        </p>
+        <Search @unShow="showSearch" :user_id="this.user._id" v-show="this.show" class="search">
+         
+        </Search>
         <v-btn icon v-on:click="showSearch">
           <v-icon>mdi-magnify</v-icon>
         </v-btn>
@@ -48,7 +48,7 @@
       </v-btn>
 
       <v-btn v-if="loggedIn">
-        <Requests :requests="requests.to" class="requests" />
+        <!-- <Requests :requests="requests.to" class="requests" /> -->
       </v-btn>
     </v-toolbar>
 
@@ -56,21 +56,25 @@
   </div>
 </template>
 <script>
-//import Search from './search'
-import Requests from "./Requests";
+import Search from './search'
+// import Requests from "./Requests";
 import io from "socket.io-client";
 export default {
   name: "Navbar",
   data() {
     return {
-      dialog: false,
+      show: false,
       name:'',
-      requests:[],
+      requests:[
+        {_id:"123456"},
+        {_id:"147852"}
+      ],
       user:{}
     };
   },
   created: function() {
       this.socket = io("http://localhost:3000");
+      
     window.onbeforeunload = () => {
       // this.socket.emit('connection', this.username);
     };
@@ -110,9 +114,9 @@ export default {
   methods: {
     showSearch() {
      
-      this.dialog= !this.dialog;
-      console.log(this.dialog)
-   
+      this.show= !this.show;
+      console.log(this.show)
+        
     // this.$router.push(e);
     },
     click(){
@@ -121,8 +125,8 @@ export default {
     }
   },
   components: {
-    Requests,
-  //  Search,
+    // Requests,
+    Search,
    
   },
 };

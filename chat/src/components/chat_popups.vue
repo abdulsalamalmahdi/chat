@@ -5,7 +5,7 @@
         <v-list-item-avatar>
           <v-img src="../../public/default-image.png" alt=""></v-img>
         </v-list-item-avatar>
-        <h4>{{ userPop.email }}</h4>
+        <h4 @click="go(userPop._id)"><a href="">{{ userPop.first_name + " " + userPop.last_name }}</a></h4>
 
         <v-btn
           @click.native="close_chat_head(userPop._id)"
@@ -107,6 +107,10 @@ export default {
 
       this.text = "";
     },
+
+    go(_id){
+      this.$router.push(`/${_id}`)
+    }
   },
 };
 </script>

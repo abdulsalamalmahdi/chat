@@ -1,6 +1,9 @@
 <template>
   <div class="body">
-    <v-container  v-if="authed" class=" container d-flex flex-row main">
+    <v-container
+      v-if="authed && (this.$route.path === '/profile' || this.user._id === this.$route.params.id)"
+      class=" container d-flex flex-row main"
+    >
       <v-col cols="2" class="container-user-card pa-2">
         <v-img
           :src="this.image"
@@ -11,7 +14,7 @@
           width="100%"
         ></v-img>
 
-        <!-- <v-form class="form">
+        <v-form class="form">
           <v-text-field
             v-if="show"
             v-model="image"
@@ -22,7 +25,7 @@
           <v-btn v-if="show" id="urlBtn" @click.prevent="submit" color="info"
             ><v-icon class="ico">mdi-link</v-icon></v-btn
           >
-        </v-form> -->
+        </v-form>
 
         <h6>Name: {{ user.first_name }}</h6>
         <h6>age: {{ user.age }}</h6>
@@ -30,21 +33,20 @@
         <h6>place: {{ user.place }}</h6>
       </v-col>
 
-     
-         <!-- <v-col> -->
-          <v-card class="welcome" >
-            welcom: {{ user.first_name + " " + user.last_name }}
-          </v-card> 
-           <!-- <v-spacer></v-spacer> -->
-          <!-- <v-card>
+      <!-- <v-col> -->
+      <v-card class="welcome">
+        welcom: {{ user.first_name + " " + user.last_name }}
+      </v-card>
+      <!-- <v-spacer></v-spacer> -->
+      <!-- <v-card>
             <Requests :msgs="messages" />
           </v-card>  -->
-        
-        <v-spacer> </v-spacer> 
 
-        <Friends class="friends" @openPopup="openPopup" :friends="this.friends" />
+      <v-spacer> </v-spacer>
 
-        <!-- <v-col>
+      <Friends class="friends" @openPopup="openPopup" :friends="this.friends" />
+
+      <!-- <v-col>
           <v-card max-width="fit-content">
             <v-btn
               v-if="this.user.role === 'client'"
@@ -60,7 +62,36 @@
         </v-col> -->
       <!-- </v-col> -->
     </v-container>
-    <v-container v-else>
+    <v-container v-else-if="this.$route.params._id !== 'undefined'">
+      watching someone else profile
+      <v-row>
+        <v-col cols="2" class="container-user-card pa-2">
+          <v-img
+            :src="this.image"
+            class="profiler"
+            alt=""
+            aspect-ratio="0.9"
+            height="40%"
+            width="100%"
+          ></v-img>
+
+          <h6>age: {{ visited_user.age }}</h6>
+          <h6>work: {{ visited_user.work }}</h6>
+          <h6>place: {{ visited_user.place }}</h6>
+        </v-col>
+
+        <v-col class="ml-12">
+          <h1>{{ visited_user.first_name }}</h1>
+          <v-btn v-if="this.user.friends.find(friend=> friend._id !== this.$route.params.id)" :disabled="requested" @click="friendRequest"
+            ><v-icon> mdi-account-plus</v-icon> add Friend
+            </v-btn>
+            <v-btn  v-if="this.user.friends.find(friend=> friend._id === this.$route.params.id)" :disabled="requested" @click="unfriend(visited_user._id, user._id)"
+            ><v-icon> mdi-account-minus</v-icon> Unfriend
+            </v-btn>
+        </v-col>
+      </v-row>
+    </v-container>
+    <v-container v-if="!authed">
       <div>
         <h1>Not A User!!!</h1>
         <v-btn @click="logIn">
@@ -76,7 +107,6 @@
       class="grey lighten-5"
       style=" display: flex; position: relative ;height: 30%;top: 65%; flex-diretcion: row-reverse;"
     >
-   
       <v-card
         v-for="userPop in usersPops"
         :key="userPop._id"
@@ -85,9 +115,14 @@
         tile
         style="float: right; height: 100%; width: 320px;margin-right: 1rem ;"
       >
-       <chatPopups @close_chat_head="close_chat_head" :userPop="userPop" :_id="user._id" :messages="messages"/>
+        <chatPopups
+          @close_chat_head="close_chat_head"
+          :userPop="userPop"
+          :_id="user._id"
+          :messages="messages"
+        />
       </v-card>
-    
+
       <!-- <v-card
         v-for="userPop in usersPops"
         :key="userPop._id"
@@ -132,12 +167,12 @@
     <v-col cols="12"> </v-col>
 
     <!-- </v-container> -->
-   
   </div>
 </template>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+import io from "socket.io-client";
 let c = [];
 import Requests from "./Requests";
 import Drawer from "./drawer";
@@ -156,57 +191,77 @@ export default {
       isConnected: false,
       socketMsg: "",
       user: {},
+      visited_user: {},
       users: [],
-      friends:[],
+      friends: [],
       messages: [],
       image: "",
       popup_count: "",
       popups: [],
-      error:"",
+      error: "",
+      requested:false,
     };
   },
 
   created: async function() {
-    this.$store
-      .dispatch("retrieveUser")
-      .then((res) => {
-       // console.log(res.data);
-        this.user = res.data.user;
-        this.messages = res.data.messages;
-        this.image = !this.user.image ? "/default-image.png" : this.user.image;
-        this.friends= res.data.user.friends;
-      })
-      .catch((err) => {
-        console.log(err.message.includes('401'));
-        if(err.message.includes('401')){
-          this.error='unautherized';
-          this.$router.push('/login');
+    this.socket = io("http://localhost:3000");
+   this.socket.emit('connection', {data: 'connection to socket established'})
+    
+      await this.$store
+        .dispatch("retrieveUser")
+        .then(async (res) => {
+          await console.log(res);
+          this.user = res.data.user;
 
-        }
-        
-      });
+          this.messages = res.data.messages;
+          this.image = !this.user.image
+            ? "/default-image.png"
+            : this.user.image;
+          
+          this.friends = res.data.user.friends;
+           await console.log(this.friends)
+        })
+        .catch((err) => {
+          console.log(err.message.includes("401"));
+          if (err.message.includes("401")) {
+            this.error = "unautherized";
+            this.$router.push("/login");
+          }
+        });
+    
+    {
+    }
+       
+     
     this.$store
       .dispatch("retrieveUsers")
       .then(async (res) => {
-      //  await console.log(res.data);
+        //  await console.log(res.data);
         this.users = res.data;
+        this.visited_user = await this.users.find(
+          (el) => el._id === this.$route.params.id
+        );
+        console.log(this.user._id)
+        console.log(this.visited_user._id)
+        this.image = !this.visited_user.image
+          ? "/default-image.png"
+          : this.visited_user.image;
       })
       .catch((err) => {
         console.log(err.message);
-        this.error=err.message;
-        
+        this.error = err.message;
       });
   },
   computed: {
     authed() {
-     // console.log(this.$store.getters.loggedIn)
+      // console.log(this.$store.getters.loggedIn)
       return this.$store.getters.loggedIn;
     },
     usersPops() {
-      const pops = this.popups.map((popup) =>
-        this.users.find((user) => user._id === popup)
-      ).reverse();
-     // console.log(pops);
+      const pops = this.popups
+        .map((popup) => this.users.find((user) => user._id === popup))
+        .reverse();
+      // console.log(pops);
       return pops;
     },
   },
@@ -243,39 +298,33 @@ export default {
       const width = window.innerWidth;
       this.popup_count = Math.round(width / 320);
 
-    //   console.log(this.popup_count);
+      //   console.log(this.popup_count);
       if (!anew) {
-
         c.push(id);
         // console.log(c);
 
         this.popups = c;
         // console.log(this.popups);
-         if (this.popups.length > this.popup_count) {
- const elEndx= c.indexOf(id);
-      //  console.log('index of id is ' + elEndx)
-       
-     
-          
+        if (this.popups.length > this.popup_count) {
+          const elEndx = c.indexOf(id);
+          //  console.log('index of id is ' + elEndx)
 
           document
             .getElementById(`${this.popups[c.length - elEndx]}`)
             .setAttribute("class", "hidden");
-
         }
       }
     },
 
     close_chat_head(id) {
-    //  console.log("closed");
+      //  console.log("closed");
       const toClose = this.popups.find((popup) => popup === id);
       const index = this.popups.indexOf(toClose);
       this.popups.splice(index, 1);
-    //  console.log(this.popups);
-       document
-            .getElementById(`${this.popups[ index - (c.length-1)]}`)
-            .classList.remove("hidden");
-       
+      //  console.log(this.popups);
+      document
+        .getElementById(`${this.popups[index - (c.length - 1)]}`)
+        .classList.remove("hidden");
     },
 
     onClickBtn() {
@@ -301,26 +350,26 @@ export default {
     logIn() {
       this.$router.push("/login");
     },
-    pingServer() {
+    friendRequest() {
       // Send the "pingServer" event to the server.
-
-      this.$socket.emit("request", { user_id: this.user._id });
-      this.$socket.on("datareturn", (data) => {
-        console.log(data);
+ 
+      this.socket.emit("friend-request", {
+        requester: this.user._id,
+        recepient: this.visited_user._id,
       });
+      this.requested= true;
     },
-    clickButton: function(data) {
+    unfriend(friend_id, user_id) {
       // $socket is socket.io-client instance
-      console.log("this is bullshit");
-      this.$socket.emit("customEmit", data);
+   
+      this.socket.emit("unfriend", {friend_id, user_id});
     },
   },
 };
 </script>
 
 <style scoped>
-.container{
- 
+.container {
   width: inherit;
 }
 .main {
@@ -479,14 +528,11 @@ p {
 .hidden {
   display: none;
 }
-.friends{
+.friends {
   position: relative;
   left: 23%;
   bottom: 1rem;
   width: 100%;
   z-index: 4000;
- 
- 
 }
-
 </style>

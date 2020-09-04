@@ -35,7 +35,7 @@ const router= new Router({
             component:LandingPage
         },
         {
-            path:"/profile" || '/:id',
+            path:"/profile",
             name:"profile",
             component:Profile,
             meta:{
@@ -78,7 +78,12 @@ const router= new Router({
             path:'/hello',
             name:'HelloWorld',
             component: HelloWorld,
-        }
+        },
+        {
+            path:"/:id",
+            name:"profile",
+            component:Profile,
+        },
         
     ]
 })

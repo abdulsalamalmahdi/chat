@@ -2,100 +2,106 @@
   <div >
     <v-app id="inspire">
       <v-card class="son">
-       
-        <v-card-text>
-          <v-autocomplete
-            v-model="model"
-            :items="items"
-            :loading="isLoading"
-            :search-input.sync="search"
-            color="white"
-            hide-no-data
-            hide-selected
-            item-text="Description"
-            item-value="API"
-            label="Search for users"
-            placeholder="Start typing to Search"
-            prepend-icon="mdi-database-search"
-            return-object
-          ></v-autocomplete>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-expand-transition>
-          <v-list v-if="model" class="red lighten-3">
-            <v-list-item v-for="(field, i) in fields" :key="i">
-              <v-list-item-content>
-                <v-list-item-title v-text="field.value"></v-list-item-title>
-                <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </v-expand-transition>
-        <v-card-actions>
-         
-        </v-card-actions>
+       <template>
+  <v-container fluid>
+    <v-row>
+    <v-text-field v-model="val" v-on:input="look" placeholder="Search" ></v-text-field>
+   <v-card
+    class=" autoComplete"
+  >
+   
+
+    <v-list three-line>
+      <template v-for="(item) in items">
+        <!-- <v-subheader
+          v-if="item.header"
+          :key="item.header"
+          v-text="item.header"
+        ></v-subheader> -->
+<!-- 
+        <v-divider
+          v-else-if="item.divider"
+          :key="index"
+          :inset="item.inset"
+        ></v-divider> -->
+
+        <v-list-item
+        class="item"
+          :key="item._id"
+          @click="go(item._id)"
+        >
+          <v-list-item-avatar>
+            <v-img :src="item.image ? item.image: require('../../public/default-image.png')"></v-img>
+          </v-list-item-avatar>
+
+          <v-list-item-content>
+            <v-list-item-title v-html="item.first_name"></v-list-item-title>
+            <v-list-item-subtitle v-html="item.last_name"></v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+      </template>
+    </v-list>
+  </v-card>
+    </v-row>
+  </v-container>
+</template>
+      
       </v-card>
     </v-app>
   </div>
 </template>
 
 <script>
+//let self=this;
 export default {
   name: "Search",
   data() {
     return {
       descriptionLimit: 60,
-      entries: [],
+      items: [],
+      count:'',
       isLoading: false,
       model: null,
       search: null,
+      val:"",
     };
   },
-   computed: {
-    fields () {
-      if (!this.model) return []
-
-      return Object.keys(this.model).map(key => {
-        return {
-          key,
-          value: this.model[key] || 'n/a',
-        }
-      })
-    },
-    items () {
-      return this.entries.map(entry => {
-        const Description = entry.Description.length > this.descriptionLimit
-          ? entry.Description.slice(0, this.descriptionLimit) + '...'
-          : entry.Description
-
-        return Object.assign({}, entry, { Description })
-      })
-    },
+  props:{
+   user_id:{
+     type:String
+   }
   },
-   watch: {
-    search () {
-      // Items have already been loaded
-      if (this.items.length > 0) return
-
-      // Items have already been requested
-      if (this.isLoading) return
-
-      this.isLoading = true
-
-      // Lazily load input items
-      fetch('https://api.publicapis.org/entries')
-        .then(res => res.json())
-        .then(res => {
-          const { count, entries } = res
-          this.count = count
-          this.entries = entries
-        })
-        .catch(err => {
-          console.log(err)
-        })
-        .finally(() => (this.isLoading = false))
-    },
-  },
+  methods:{
+    look(){
+      console.log(this.val)
+      if(this.val){
+        this.$store.dispatch('retrieveUsers').then(res=>{
+      
+     const filtered= res.data.filter(user=> user['first_name'].toLowerCase().includes(this.val.toLowerCase()));
+    //  const index= filtered.find(user=>{
+    //     user._id === this.user_id  
+    //     })
+    //     console.log(index)
+    //     console.log(index)
+    //  const excludeMe = filtered.indexOf(index)
+    //  filtered.splice(excludeMe,1)
+    //  console.log(excludeMe)
+    
+     console.log(filtered)
+     this.items= filtered;
+    
+    })
+    .catch(err=> console.log(err))
+      }else{
+        this.items=[];
+      }
+   },
+   go(_id){
+this.$router.push(`/${_id}`)
+this.$emit('unShow')
+this.val=""
+   }
+  }
 
 };
 </script>
@@ -110,4 +116,11 @@ z-index: 6000;
 .son{
     top: 2rem;
 }
+.autoComplete{
+  width: 100%;
+}
+.item{
+  height: 2rem;
+}
+
 </style>
